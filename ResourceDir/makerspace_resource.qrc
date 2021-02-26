@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="window_icons">
+    <file>tools.png</file>
+  </qresource>
+  <qresource prefix="utsa_brand">
+    <file>Makerspace-Logo-scaled.png</file>
+    <file>Makerspace-Logo-V2.png</file>
+  </qresource>
+</RCC>

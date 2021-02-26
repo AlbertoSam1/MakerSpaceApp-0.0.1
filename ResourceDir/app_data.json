@@ -1,0 +1,15 @@
+{
+    "app_log": {
+        "crash_events": "",
+        "error_log": "",
+        "user_info": ""
+    },
+    "app_user": {
+        "access": 0,
+        "log_in": "",
+        "username": "test"
+    },
+    "inventory_item_groups": {
+        "Power Tool": "PT"
+    }
+}

@@ -1,0 +1,7 @@
+global app_data
+global groups
+global _name_
+global inventory_entries_cols
+global inventory_entries_vals
+global inventory_lastused_namekey
+global inventory_override_query_table
