@@ -61,7 +61,7 @@ def select(sql, params):
                                       database=DATABASE_CREDENTIALS['database'])
 
         cursor = connection.cursor()
-        print(cursor.mogrify(sql, params))
+        # print(cursor.mogrify(sql, params))
         query = cursor.mogrify(sql, params)
         cursor.execute(query)
 

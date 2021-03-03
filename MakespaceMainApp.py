@@ -49,6 +49,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _set_append_tab(self):
         self.search_file_append_inv.clicked.connect(self.open_file_name_dialog)
         self.check_last_inv_id.clicked.connect(self.show_last_item_id)
+        self.search_file_append_inv.clicked.connect(self.openFileNameDialog)
+
+    def openFileNameDialog(self):
+        dialog = QFileDialog()
+        fname = dialog.getOpenFileName(None, "Import JSON", "", "JSON files (*.json)")
+        print(fname)
 
     def show_last_item_id(self):
         item_group = str(self.choose_item_cat_inv.currentText())
@@ -58,10 +64,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         part_id = select(query, (inventory_key,))
 
         lpi = [int(x[0][-3:]) for x in part_id]
-        lpi = lpi.index(max(lpi))
-        self.last_inv_id_label.setText(part_id[lpi][0])
 
-        if lpi < 9:
+        try:
+            lpi = lpi.index(max(lpi))
+            self.last_inv_id_label.setText(part_id[lpi][0])
+        except ValueError:
+            pass
+
+        if lpi == []:
+            next_id = "000" + inventory_key[1:-1] + "001"
+            self.last_inv_id_label.setText("ID Has Not Been Used")
+        elif 0 < lpi < 9:
             next_id = part_id[lpi][0][:-1] + str(int(part_id[lpi][0][-1]) + 1)
         else:
             next_id = "N/A"

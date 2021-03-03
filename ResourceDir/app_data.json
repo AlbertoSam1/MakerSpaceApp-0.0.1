@@ -10,6 +10,16 @@
         "username": "test"
     },
     "inventory_item_groups": {
-        "Power Tool": "PT"
+        "Clamp Tool": "CT",
+        "Desktop": "DC",
+        "Drill Bits": "DB",
+        "Hand Tool": "HT",
+        "Measuring Tool": "MT",
+        "Non Groupable Item": "NGI",
+        "Office Supply": "OS",
+        "Power Tool": "PT",
+        "Soldering": "ST",
+        "Tap and Die": "TAD",
+        "Tool Cart": "TC"
     }
 }
