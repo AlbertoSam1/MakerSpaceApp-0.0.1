@@ -30,7 +30,7 @@ def insert(query, params):
                                       database=DATABASE_CREDENTIALS['database'])
 
         cursor = connection.cursor()
-        print(cursor.mogrify(query, params))
+        # print(cursor.mogrify(query, params))
         cursor.execute(query, params)
         # print if needed
         # print(connection.get_dsn_parameters(),"\n")
@@ -38,6 +38,7 @@ def insert(query, params):
         connection.commit()
     except (Exception, psycopg2.Error) as error:
         print("Error while connecting to PostgreSQL", error)
+        raise error
 
     finally:
         # closing database connection.

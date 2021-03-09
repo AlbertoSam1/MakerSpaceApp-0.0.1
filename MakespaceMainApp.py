@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer, QTime
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QFileDialog, QMessageBox
 
 from MSpace.Login import LoginDialog
 from MSpace.DB_Interactions import update_overview, select, get_updated_part_values
@@ -8,7 +8,7 @@ from MSpace.DB_Interactions import insert
 from MSpace import Globals
 from ResourceDir.MakerspaceApp import Ui_MainWindow
 from IDGenerator import get_inventory_rid, get_inventory_gid
-from FormattedDate import ymd
+from FormattedDate import ymd, year
 from UIFunctions import layout_widgets
 
 import ResourceDir.makerspace_resource_rc as resource
@@ -25,6 +25,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._set_search_tab()
         self._set_update_inventory_tab()
         self._set_append_tab()
+        self._set_machine_shop_safety_training_tab()
 
         self.update_date()
 
@@ -35,6 +36,101 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def update_date(self):
         self.date_label.setText("Today")
+
+    def _set_machine_shop_safety_training_tab(self):
+        self.MS_ST_add_student_button.clicked.connect(self._ms_safety_add)
+        self.MS_ST_search_trainee_button.clicked.connect(self._ms_safety_search)
+        self.MS_ST_add_student_full_name_entry.setText("First, Last")
+        self.MS_ST_search_trainee_clear.clicked.connect(self._clear_search_ms_record_window)
+
+    def _clear_search_ms_record_window(self):
+        self.MS_ST_search_trainee_textbrowser.clear()
+
+    def _ms_safety_add(self):
+        f_name = self.MS_ST_add_student_full_name_entry.text()
+        abc = self.MS_ST_add_student_abc_entry.text()
+        yoc = self.MS_ST_add_student_yoc_entry.text()
+        self.MS_ST_add_student_full_name_entry.clear()
+        self.MS_ST_add_student_abc_entry.clear()
+        self.MS_ST_add_student_yoc_entry.clear()
+        query = ("""INSERT INTO staff."SafetyTraining-MS" (first_name, last_name, abc123, year_of_com)
+                VALUES (%s, %s, %s, %s);""")
+        first, last = f_name.split(",")
+        params = [first, last[1:], abc, yoc]
+
+        msg = QMessageBox()
+        msg.setWindowTitle("Information")
+        detail = ""
+        try:
+            if abc[:3] != str and int(abc[3:]) > 999:
+                detail = "Use abc123 format"
+                raise TypeError("Incorrect abc format")
+            if int(yoc) != int and int(yoc) < 2000:
+                detail = "Years below 2000 are not available"
+                raise TypeError("Invalid year")
+            insert(query, params)
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("You have successfully added {}".format(f_name))
+            msg.setStandardButtons(QMessageBox.Close)
+            msg.exec_()
+        except Exception as error:
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error while adding {}".format(f_name))
+            msg.setStandardButtons(QMessageBox.Close)
+            if "duplicate key" in str(error):
+                msg.setDetailedText("User has already been added to the record.")
+            elif "abc" in str(error):
+                msg.setDetailedText(detail)
+            elif "year" in str(error):
+                msg.setDetailedText(detail)
+            elif "invalid literal for int()" in str(error):
+                msg.setDetailedText("Check you abc123 and year fields")
+            msg.exec_()
+
+    def _ms_safety_search(self):
+        first = self.MS_ST_search_trainee_fname_entry.text()
+        last = self.MS_ST_search_trainee_lname_entry.text()
+        abc = self.MS_ST_search_trainee_abc_entry.text()
+        self.MS_ST_search_trainee_fname_entry.clear()
+        self.MS_ST_search_trainee_lname_entry.clear()
+        self.MS_ST_search_trainee_abc_entry.clear()
+
+        query = ("""SELECT first_name, last_name, abc123, year_of_com, maker, maker_level
+                        FROM staff."SafetyTraining-MS"
+                        WHERE first_name = %s 
+                        OR last_name LIKE %s 
+                        OR abc123 LIKE %s;""")
+
+        params = [first, last, abc]
+
+        r = (select(query, params))
+        current = "hasn't"
+        msg = QMessageBox()
+        msg.setWindowTitle("Information")
+        detail = ""
+        try:
+            if int(r[0][3]) > (year() - 2):
+                current = 'has'
+
+            page_format = ("""<p><b>Machine Shop - Safety Training Record</b></p><br/>
+                                      <p>For: {}</p>
+                                      <p>With Student Id: {}</p>
+                                      <p>The student {} been safety trained withing the last 2 years</p><br/>
+                                      <p>Rowdy Maker: {}</p>
+                                      <p>Maker Level: {}</p>
+                                      <p>Write OXSDR and click renew to extend this student's
+                                      safety training record another year.<p>""".format(r[0][0] + " " + r[0][1],
+                                                                                        r[0][2], current,
+                                                                                        r[0][4], r[0][5]))
+            self.MS_ST_search_trainee_textbrowser.setAcceptRichText(True)
+            self.MS_ST_search_trainee_textbrowser.setText(page_format)
+
+        except Exception as error:
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Cannot find user name record")
+            msg.setStandardButtons(QMessageBox.Close)
+            msg.setDetailedText(str(error))
+            msg.exec_()
 
     def hide_all(self):
         for i in range(self.verticalLayout_8.count()):

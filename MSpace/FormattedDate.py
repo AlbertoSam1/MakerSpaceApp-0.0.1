@@ -16,3 +16,10 @@ def ymd():
     d = today.strftime("%Y/%m/%d")
 
     return d
+
+
+def year():
+    today = date.today()
+    y = today.strftime("%Y")
+
+    return int(y)
