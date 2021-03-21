@@ -3,6 +3,7 @@ from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QFileDialog, QMessageBox
 
 from MSpace.Login import LoginDialog
+from MSpace.FileManager import OpenFile
 from MSpace.DB_Interactions import update_overview, select, get_updated_part_values
 from MSpace.DB_Interactions import insert
 from MSpace import Globals
@@ -50,18 +51,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         f_name = self.MS_ST_add_student_full_name_entry.text()
         abc = self.MS_ST_add_student_abc_entry.text()
         yoc = self.MS_ST_add_student_yoc_entry.text()
-        self.MS_ST_add_student_full_name_entry.clear()
+        self.MS_ST_add_student_full_name_entry.setText("First, Last")
         self.MS_ST_add_student_abc_entry.clear()
         self.MS_ST_add_student_yoc_entry.clear()
         query = ("""INSERT INTO staff."SafetyTraining-MS" (first_name, last_name, abc123, year_of_com)
                 VALUES (%s, %s, %s, %s);""")
-        first, last = f_name.split(",")
-        params = [first, last[1:], abc, yoc]
 
         msg = QMessageBox()
         msg.setWindowTitle("Information")
         detail = ""
         try:
+            first, last = f_name.split(",")
+            params = [first, last[1:], abc, yoc]
+
             if abc[:3] != str and int(abc[3:]) > 999:
                 detail = "Use abc123 format"
                 raise TypeError("Incorrect abc format")
@@ -79,6 +81,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             msg.setStandardButtons(QMessageBox.Close)
             if "duplicate key" in str(error):
                 msg.setDetailedText("User has already been added to the record.")
+            elif "not enough values" in str(error):
+                msg.setDetailedText("Incorrect form for student's name")
             elif "abc" in str(error):
                 msg.setDetailedText(detail)
             elif "year" in str(error):
@@ -143,14 +147,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.verticalLayout_11.itemAt(i).widget().hide()
 
     def _set_append_tab(self):
-        self.search_file_append_inv.clicked.connect(self.open_file_name_dialog)
         self.check_last_inv_id.clicked.connect(self.show_last_item_id)
-        self.search_file_append_inv.clicked.connect(self.openFileNameDialog)
+        self.search_file_append_inv.clicked.connect(self.getfile)
 
-    def openFileNameDialog(self):
-        dialog = QFileDialog()
-        fname = dialog.getOpenFileName(None, "Import JSON", "", "JSON files (*.json)")
-        print(fname)
+    def getfile(self):
+        ft = str(self.comboBox_2.currentText())
+        file_type = "{} File (*.{})".format(ft, ft.lower())
+        manager = OpenFile()
+        fname = manager.getfile(file_type)
+        if len(fname) > 1:
+            h = fname.split("/")
+            print(h)
+            self.label_55.setText(h[-1])
 
     def show_last_item_id(self):
         item_group = str(self.choose_item_cat_inv.currentText())
@@ -175,12 +183,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             next_id = "N/A"
         self.label_51.setText(next_id)
-
-    def open_file_name_dialog(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_n, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-                                                "All Files (*);;Python Files (*.py)", options=options)
 
     def _set_inventory_overview(self):
         output = update_overview()
