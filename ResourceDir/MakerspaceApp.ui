@@ -180,7 +180,7 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="machine_shop_tab">
            <attribute name="title">
@@ -1333,7 +1333,7 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QTabWidget" name="Inventory">
               <property name="currentIndex">
-               <number>3</number>
+               <number>4</number>
               </property>
               <widget class="QWidget" name="inventory_overview_tab">
                <attribute name="title">
@@ -4185,7 +4185,7 @@ p, li { white-space: pre-wrap; }
                          <bool>false</bool>
                         </property>
                         <property name="rowCount">
-                         <number>2</number>
+                         <number>0</number>
                         </property>
                         <property name="columnCount">
                          <number>5</number>
@@ -4196,38 +4196,31 @@ p, li { white-space: pre-wrap; }
                         <attribute name="horizontalHeaderDefaultSectionSize">
                          <number>120</number>
                         </attribute>
-                        <row/>
-                        <row/>
-                        <column/>
-                        <column/>
-                        <column/>
-                        <column/>
-                        <column/>
-                        <item row="0" column="0">
+                        <column>
                          <property name="text">
                           <string>Request ID</string>
                          </property>
-                        </item>
-                        <item row="0" column="1">
+                        </column>
+                        <column>
                          <property name="text">
                           <string>Date Submitted</string>
                          </property>
-                        </item>
-                        <item row="0" column="2">
+                        </column>
+                        <column>
                          <property name="text">
                           <string>Submitted By</string>
                          </property>
-                        </item>
-                        <item row="0" column="3">
+                        </column>
+                        <column>
                          <property name="text">
                           <string>Line Update Count</string>
                          </property>
-                        </item>
-                        <item row="0" column="4">
+                        </column>
+                        <column>
                          <property name="text">
                           <string>Reviewed</string>
                          </property>
-                        </item>
+                        </column>
                        </widget>
                       </item>
                       <item>
@@ -4622,7 +4615,7 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QTabWidget" name="tabWidget">
               <property name="currentIndex">
-               <number>0</number>
+               <number>3</number>
               </property>
               <widget class="QWidget" name="tab_2">
                <attribute name="title">

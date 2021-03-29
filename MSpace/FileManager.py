@@ -7,6 +7,6 @@ class OpenFile(QWidget):
         super(QWidget, self).__init__()
 
     def getfile(self, file_type: str):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',
-                                               'c:\\', file_type)
-        return fname
+        f_name, _ = QFileDialog.getOpenFileName(self, 'Open file',
+                                                'c:\\', file_type)
+        return f_name

@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer, QTime
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QMessageBox
 
 from MSpace.Login import LoginDialog
 from MSpace.FileManager import OpenFile
@@ -11,6 +11,7 @@ from ResourceDir.MakerspaceApp import Ui_MainWindow
 from IDGenerator import get_inventory_rid, get_inventory_gid
 from FormattedDate import ymd, year
 from UIFunctions import layout_widgets
+from NewFuncs import OrderedSet
 
 import ResourceDir.makerspace_resource_rc as resource
 
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._set_update_inventory_tab()
         self._set_append_tab()
         self._set_machine_shop_safety_training_tab()
+        self._set_approve_inventory_tab()
 
         self.update_date()
 
@@ -157,7 +159,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         fname = manager.getfile(file_type)
         if len(fname) > 1:
             h = fname.split("/")
-            print(h)
             self.label_55.setText(h[-1])
 
     def show_last_item_id(self):
@@ -305,6 +306,82 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Globals.inventory_override_query_table = 'private.inventory_approvals'
         self.update_admin_label.setText('Enter Admin Code')
 
+    def _set_approve_inventory_tab(self):
+        self.refresh_approvals_inventory_button.clicked.connect(self._refresh_inventory_approvals)
+        self.approve_table.cellDoubleClicked.connect(self.send_approval2view)
+        self.approve_open_button.clicked.connect(self._approval_open)
+
+    def _approval_open(self):
+        _ = self.approve_entry_request_id.text()
+        query = "SELECT * FROM private.inventory_approvals WHERE request_id = %s;"
+        params = [_]
+        new = select(query, params)
+        new = [item for t in new for item in t]
+
+        query = "SELECT * FROM public.general_inventory WHERE part_id = %s;"
+        params = [new[6]]
+        current = select(query, params)
+        current = [item for t in current for item in t]
+        table = ""
+        n_vals = list(set(current) ^ set(new[6:]))
+
+        query = '''SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = %s '''
+        params = ["general_inventory"]
+        cols = select(query, params)
+        cols = [item for t in cols for item in t]
+
+        idxs = []
+        run = 1
+        while run:
+            try:
+                for i in range(1, len(n_vals)):
+                    if i % 2 != 0:
+                        idxs.append(current.index(n_vals[i - 1]))
+                    else:
+                        idxs.append("")
+                run = 0
+            except ValueError:
+                pass
+
+        for i in range(1, len(n_vals)):
+            if i % 2 != 0:
+                table += "<p>Entry {} has changed from {} to {}<p/>".format(cols[idxs[i - 1]], n_vals[i - 1], n_vals[i])
+
+        page_format = ("""<body>
+                            <h2><b>Review Request ID for: {}</b></h2>
+                            <h3>Request made on {} by {}</h2>
+                            <p>The item was modified in {} field(s)</p>
+                            <h3><b>Details</b><h3/>
+                            <p>Current Value    New Value<p/>
+                            <p>{}<p/>
+                          </body>""".format(new[7],
+                                            new[1].strftime("%Y-%m-%d"),
+                                            new[2],
+                                            new[3],
+                                            table))
+
+        self.approve_text_display.setText(page_format)
+
+    def _refresh_inventory_approvals(self):
+        self.approve_table.setRowCount(0)
+
+        query = "SELECT * FROM private.inventory_update_request"
+        params = []
+        vals = select(query, params)
+
+        self.approve_table.setRowCount(len(vals))
+
+        row = 0
+        for entry in vals:
+            column = 0
+            for v in entry:
+                if column == 1:
+                    self.approve_table.setItem(row, column, QTableWidgetItem(v.strftime("%Y-%m-%d")))
+                else:
+                    self.approve_table.setItem(row, column, QTableWidgetItem(str(v)))
+                column += 1
+            row += 1
+
     def send_update_2_revision_inventory(self):
         # When linked button is clicked the application sends current information in entries to database and
         # create a new request ID entry in inventory_update_request table. This table should have the information
@@ -352,9 +429,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if params[15] == 'True':
             params[15] = True
             nparams[9] = True
+        else:
+            params[15] = False
+            nparams[9] = False
+
         if params[16] == 'False':
             params[16] = False
+            nparams[10] = False
+        else:
+            params[16] = True
             nparams[10] = True
+
+        line_update = 0
+        it = 0
+        var_changes = []
+        for entry in nparams:
+            if entry != Globals.inventory_entries_vals[it]:
+                var_changes.append((entry, Globals.inventory_entries_vals))
+                line_update += 1
+            it += 1
+
+        params[3] = line_update
 
         params = tuple(params)
 
@@ -452,6 +547,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             name = self.search_display_table.item(row, column + 1)
             Globals._name_ = name.text()
             self.update_part_id.setText(item.text())
+
+    def send_approval2view(self, row, column):
+        if column == 0:
+            item = self.approve_table.item(row, column)
+            self.approve_entry_request_id.setText(item.text())
 
     def _run_clock(self):
         # creating a timer object
