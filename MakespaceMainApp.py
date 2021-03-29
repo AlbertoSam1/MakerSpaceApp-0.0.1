@@ -5,13 +5,12 @@ from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QM
 from MSpace.Login import LoginDialog
 from MSpace.FileManager import OpenFile
 from MSpace.DB_Interactions import update_overview, select, get_updated_part_values
-from MSpace.DB_Interactions import insert
+from MSpace.DB_Interactions import insert, delete
 from MSpace import Globals
 from ResourceDir.MakerspaceApp import Ui_MainWindow
 from IDGenerator import get_inventory_rid, get_inventory_gid
 from FormattedDate import ymd, year
 from UIFunctions import layout_widgets
-from NewFuncs import OrderedSet
 
 import ResourceDir.makerspace_resource_rc as resource
 
@@ -307,60 +306,127 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_admin_label.setText('Enter Admin Code')
 
     def _set_approve_inventory_tab(self):
+        def _clear():
+            self.approve_text_display.clear()
+            Globals.approval_inv_vals = []
+
         self.refresh_approvals_inventory_button.clicked.connect(self._refresh_inventory_approvals)
         self.approve_table.cellDoubleClicked.connect(self.send_approval2view)
-        self.approve_open_button.clicked.connect(self._approval_open)
+        self.approve_open_button.clicked.connect(self._approval_open_inventory)
+        self.approve_confirm_button.clicked.connect(self._commit_approval_inventory)
+        self.approve_inventory_clear_button.clicked.connect(_clear)
 
-    def _approval_open(self):
+    def _commit_approval_inventory(self):
+        msg = QMessageBox()
+        msg.setWindowTitle("Information")
+
+        if self.approve_checkbox_confirm.isChecked():
+            print('confirmed')
+
+            query = ("""UPDATE {} """
+                     """SET part_id = %s, """
+                     """name = %s, """
+                     """description = %s, """
+                     """location_id = %s, """
+                     """group_serial = %s, """
+                     """device_serial = %s, """
+                     """utsa_asset_id = %s, """
+                     """training_lvl = %s, """
+                     """qty = %s, """
+                     """available_to_rent = %s, """
+                     """in_maintenance = %s, """
+                     """who_has_it = %s """
+                     """WHERE part_id = %s""".format("public.general_inventory"))
+
+            try:
+                insert(query, Globals.approval_inv_vals)
+
+                query = "DELETE FROM private.inventory_update_request WHERE request_id = %s;"
+                params = [Globals.inventory_update_req_id]
+                # Use insert function for delete
+                delete(query, params)
+
+                query = "DELETE FROM private.inventory_approvals WHERE request_id = %s;"
+                params = [Globals.inventory_update_req_id]
+                # Use insert function for delete
+                delete(query, params)
+
+                self.approve_text_display.clear()
+                self.approve_checkbox_confirm.setChecked(False)
+
+            except Exception as error:
+                detail = "- No request selected.\n" \
+                         "- No changes requested.\n" \
+                         "- Double click on request_id above to verify entries.\n" + str(error)
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Missing Information")
+                msg.setStandardButtons(QMessageBox.Close)
+                msg.setDetailedText(detail)
+                msg.exec_()
+
+        else:
+            detail = "- The action cannot proceed without checking the reviewed checkbutton."
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Incomplete Action")
+            msg.setStandardButtons(QMessageBox.Close)
+            msg.setDetailedText(detail)
+            msg.exec_()
+
+    def _approval_open_inventory(self):
         _ = self.approve_entry_request_id.text()
         query = "SELECT * FROM private.inventory_approvals WHERE request_id = %s;"
         params = [_]
         new = select(query, params)
         new = [item for t in new for item in t]
+        try:
+            Globals.inventory_update_req_id = new[0]
+            query = "SELECT * FROM public.general_inventory WHERE part_id = %s;"
+            params = [new[6]]
+            Globals.approval_inv_vals = new[6:]
+            Globals.approval_inv_vals.append(new[6])
+            current = select(query, params)
+            current = [item for t in current for item in t]
+            table = ""
 
-        query = "SELECT * FROM public.general_inventory WHERE part_id = %s;"
-        params = [new[6]]
-        current = select(query, params)
-        current = [item for t in current for item in t]
-        table = ""
-        n_vals = list(set(current) ^ set(new[6:]))
+            query = '''SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = %s '''
+            params = ["general_inventory"]
+            cols = select(query, params)
+            cols = [item for t in cols for item in t]
+            items_changed = []
 
-        query = '''SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = %s '''
-        params = ["general_inventory"]
-        cols = select(query, params)
-        cols = [item for t in cols for item in t]
+            nw = new[6:]
+            changed = []
+            c = current
+            for n in c:
+                k = c.index(n)
+                if n != nw[k]:
+                    changed.append(nw[k])
+                    changed.append(n)
+                    items_changed.append(cols[k])
+                c[k] = " "
 
-        idxs = []
-        run = 1
-        while run:
-            try:
-                for i in range(1, len(n_vals)):
-                    if i % 2 != 0:
-                        idxs.append(current.index(n_vals[i - 1]))
-                    else:
-                        idxs.append("")
-                run = 0
-            except ValueError:
-                pass
+            for i in range(len(items_changed)):
+                table += "<p>Entry {} has changed from {} to {}<p/>".format(items_changed[i],
+                                                                            changed[2 * i + 1],
+                                                                            changed[2 * i])
 
-        for i in range(1, len(n_vals)):
-            if i % 2 != 0:
-                table += "<p>Entry {} has changed from {} to {}<p/>".format(cols[idxs[i - 1]], n_vals[i - 1], n_vals[i])
+            page_format = ("""<body>
+                                        <h2><b>Review Request ID for: {}</b></h2>
+                                        <h3>Request made on {} by {}</h2>
+                                        <p>The item was modified in {} field(s)</p>
+                                        <h3><b>Details</b><h3/>
+                                        <p>Current Value    New Value<p/>
+                                        <p>{}<p/>
+                                      </body>""".format(new[7],
+                                                        new[1].strftime("%Y-%m-%d"),
+                                                        new[2],
+                                                        new[3],
+                                                        table))
 
-        page_format = ("""<body>
-                            <h2><b>Review Request ID for: {}</b></h2>
-                            <h3>Request made on {} by {}</h2>
-                            <p>The item was modified in {} field(s)</p>
-                            <h3><b>Details</b><h3/>
-                            <p>Current Value    New Value<p/>
-                            <p>{}<p/>
-                          </body>""".format(new[7],
-                                            new[1].strftime("%Y-%m-%d"),
-                                            new[2],
-                                            new[3],
-                                            table))
-
-        self.approve_text_display.setText(page_format)
+            self.approve_text_display.setText(page_format)
+            self.approve_entry_request_id.clear()
+        except IndexError:
+            pass
 
     def _refresh_inventory_approvals(self):
         self.approve_table.setRowCount(0)

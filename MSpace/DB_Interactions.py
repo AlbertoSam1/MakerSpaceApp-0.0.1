@@ -17,6 +17,36 @@ def update_overview():
     return output
 
 
+def delete(query, params):
+    """ delete part by part id """
+    connection = None
+    rows_deleted = 0
+    try:
+        # DATABASE_CREDENTIALS is import at the beginning of the script from system_info module
+        connection = psycopg2.connect(user=DATABASE_CREDENTIALS['user'],
+                                      password=DATABASE_CREDENTIALS['password'],
+                                      host=DATABASE_CREDENTIALS['host'],
+                                      port=DATABASE_CREDENTIALS['port'],
+                                      database=DATABASE_CREDENTIALS['database'])
+        # create a new cursor
+        cur = connection.cursor()
+        # execute the UPDATE  statement
+        cur.execute(query, params)
+        # get the number of updated rows
+        rows_deleted = cur.rowcount
+        # Commit the changes to the database
+        connection.commit()
+        # Close communication with the PostgreSQL database
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if connection is not None:
+            connection.close()
+
+    return rows_deleted
+
+
 def insert(query, params):
     connection = None
     cursor = None
