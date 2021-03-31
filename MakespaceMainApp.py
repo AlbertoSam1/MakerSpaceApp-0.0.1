@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer, QTime
+from PyQt5.QtCore import QTimer, QTime, QDate
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QMessageBox
 
 from MSpace.Login import LoginDialog
@@ -28,6 +28,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._set_append_tab()
         self._set_machine_shop_safety_training_tab()
         self._set_approve_inventory_tab()
+        self._set_conference_r_reservations()
 
         self.update_date()
 
@@ -35,6 +36,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Link approve inventory tab clicked to its tab setup method
         # self.inventory_tab.tabBarClicked(4)
+
+    def _set_conference_r_reservations(self):
+        now = QDate.currentDate()
+        max_date = now.addDays(31)
+        self.conference_calendar.setMaximumDate(max_date)
+        self.conference_calendar.setMinimumDate(now)
+        self.current_date_label.setText(self.conference_calendar.selectedDate().toString())
+        self.conference_calendar.clicked.connect(self.conference_room_calendar_clicked)
+        self.stackedWidget.setCurrentIndex(1.)
+
+    def conference_room_calendar_clicked(self):
+        date = self.conference_calendar.selectedDate()
+        self.current_date_label.setText(date.toString())
 
     def update_date(self):
         self.date_label.setText("Today")
@@ -44,6 +58,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MS_ST_search_trainee_button.clicked.connect(self._ms_safety_search)
         self.MS_ST_add_student_full_name_entry.setText("First, Last")
         self.MS_ST_search_trainee_clear.clicked.connect(self._clear_search_ms_record_window)
+        self.MS_ST_search_trainee_renew.clicked.connect(self.renew_ms_safety_training)
+
+    def renew_ms_safety_training(self):
+        if self.MS_ST_search_trainee_override_entry.text() == 'OXSDR':
+            t = self.MS_ST_search_trainee_textbrowser.toPlainText().split("\n")
+            abc123 = t[4][17:-1]
+            date = QDate.currentDate().toString().split(" ")[3]
+            new_date = QDate.currentDate().addYears(2).toString().split(" ")[3]
+
+            query = ("""UPDATE staff."SafetyTraining-MS" """
+                     """SET year_of_com = %s """
+                     """WHERE abc123 = %s""")
+
+            params = [date, abc123]
+
+            insert(query, params)
+
+            msg = QMessageBox()
+            msg.setWindowTitle("Information")
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("You have successfully renewed {} expiration of training to {}".format(t[3][6:-1], new_date))
+            msg.setStandardButtons(QMessageBox.Close)
+            msg.exec_()
+
+        self.MS_ST_search_trainee_override_entry.clear()
 
     def _clear_search_ms_record_window(self):
         self.MS_ST_search_trainee_textbrowser.clear()
@@ -175,7 +214,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except ValueError:
             pass
 
-        if lpi == []:
+        if not lpi:
             next_id = "000" + inventory_key[1:-1] + "001"
             self.last_inv_id_label.setText("ID Has Not Been Used")
         elif 0 < lpi < 9:
