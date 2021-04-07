@@ -44,11 +44,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.conference_calendar.setMinimumDate(now)
         self.current_date_label.setText(self.conference_calendar.selectedDate().toString())
         self.conference_calendar.clicked.connect(self.conference_room_calendar_clicked)
-        self.stackedWidget.setCurrentIndex(1.)
+        self.conference_student_info.setCurrentIndex(1)
+        self.conference_reserve_button.clicked.connect(self.conference_room_reserve_button)
 
     def conference_room_calendar_clicked(self):
         date = self.conference_calendar.selectedDate()
         self.current_date_label.setText(date.toString())
+
+    def conference_room_reserve_button(self):
+        self.conference_student_info.setCurrentIndex(0)
 
     def update_date(self):
         self.date_label.setText("Today")
@@ -215,7 +219,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pass
 
         if not lpi:
-            next_id = "000" + inventory_key[1:-1] + "001"
+            next_id = str(self.inventory_append_cs.currentText()) + inventory_key[1:-1] + "0001"
             self.last_inv_id_label.setText("ID Has Not Been Used")
         elif 0 < lpi < 9:
             next_id = part_id[lpi][0][:-1] + str(int(part_id[lpi][0][-1]) + 1)
@@ -224,33 +228,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_51.setText(next_id)
 
     def _set_inventory_overview(self):
-        output = update_overview()
-        self.main_date_label.setText("Week of Monday: " + output[0][0].strftime('%B, %d, %Y'))
+        try:
+            output = update_overview()
+            self.main_date_label.setText("Week of Monday: " + output[0][0].strftime('%B, %d, %Y'))
 
-        self.cons_value.setText(str(output[0][1]))
-        self.item_lost_value.setText(str(output[0][2]))
-        self.material_cost_value.setText(str(output[0][3]))
-        self.approvals_value.setText(str(output[0][4]))
-        self.rejections_value.setText(str(output[0][5]))
-        self.total_cost_value.setText(str(output[0][6]))
+            self.cons_value.setText(str(output[0][1]))
+            self.item_lost_value.setText(str(output[0][2]))
+            self.material_cost_value.setText(str(output[0][3]))
+            self.approvals_value.setText(str(output[0][4]))
+            self.rejections_value.setText(str(output[0][5]))
+            self.total_cost_value.setText(str(output[0][6]))
 
-        staff_names = output[0][9].split(",")
-        staff_names_text = ""
-        for s in staff_names:
-            staff_names_text += s
-            staff_names_text += "\n"
+            staff_names = output[0][9].split(",")
+            staff_names_text = ""
+            for s in staff_names:
+                staff_names_text += s
+                staff_names_text += "\n"
 
-        self.current_staff_text_value.setText(staff_names_text)
-        self.current_n_of_items_value.setText(str(output[0][7]))
-        self.last_update_value.setText(str(output[0][8]))
+            self.current_staff_text_value.setText(staff_names_text)
+            self.current_n_of_items_value.setText(str(output[0][7]))
+            self.last_update_value.setText(str(output[0][8]))
 
-        self.cost_of_running_value.setText(str(output[0][10]))
-        self.revenue_value.setText(str(output[0][11]))
-        self.num_staff_value.setText(str(output[0][12]))
-        self.num_stud_workers_value.setText(str(output[0][13]))
-        self.num_volunteers_value.setText(str(output[0][14]))
+            self.cost_of_running_value.setText(str(output[0][10]))
+            self.revenue_value.setText(str(output[0][11]))
+            self.num_staff_value.setText(str(output[0][12]))
+            self.num_stud_workers_value.setText(str(output[0][13]))
+            self.num_volunteers_value.setText(str(output[0][14]))
 
-        self.next_general_inv_value.setText(str(output[0][15]))
+            self.next_general_inv_value.setText(str(output[0][15]))
+        except IndexError:
+            pass
 
     def _set_search_tab(self):
         self.search_inventory_type.addItem('Machine Shop')
