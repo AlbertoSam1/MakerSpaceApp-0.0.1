@@ -3,6 +3,7 @@ from PyQt5.QtCore import QTimer, QTime, QDate
 from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QLineEdit, QLabel, QMessageBox
 
 from MSpace.Login import LoginDialog
+from MSpace.ReadInventoryFile import check_csv_inventory
 from MSpace.FileManager import OpenFile
 from MSpace.DB_Interactions import update_overview, select, get_updated_part_values
 from MSpace.DB_Interactions import insert, delete
@@ -11,6 +12,7 @@ from ResourceDir.MakerspaceApp import Ui_MainWindow
 from IDGenerator import get_inventory_rid, get_inventory_gid
 from FormattedDate import ymd, year
 from UIFunctions import layout_widgets
+from Setup import get_inventory_cols
 
 import ResourceDir.makerspace_resource_rc as resource
 
@@ -29,13 +31,43 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._set_machine_shop_safety_training_tab()
         self._set_approve_inventory_tab()
         self._set_conference_r_reservations()
+        self.init_groups()
+
+        get_inventory_cols()
+        self.inv_append_set_entries()
 
         self.update_date()
 
+        self._future_work()
+
         self.inventory_as_admin = None
+        self.check_level()
 
         # Link approve inventory tab clicked to its tab setup method
         # self.inventory_tab.tabBarClicked(4)
+
+    def check_level(self):
+        level = Globals.app_data['app_user']['access']
+        if level < 5:
+            self.approve_inventory_tab.setEnabled(False)
+            self.denied_inventory_tab.setEnabled(False)
+
+    def _future_work(self):
+        self.printing3d_tab.setEnabled(False)
+        self.Help.setEnabled(False)
+        self.shop_inventory_tab.setEnabled(False)
+        self.fr_registration.setEnabled(False)
+        self.fr_cage_register.setEnabled(False)
+        self.fr_qr_login.setEnabled(False)
+
+    @staticmethod
+    def init_groups():
+        Globals.groups = {"Machine Shop": '1.150MSMR0',
+                          '3D Printing': '1.150F3DPR',
+                          'Soldering Room': '1.150SR000',
+                          'Tool Checkout': '1.150BTCR0',
+                          'Computers': '1.150MSPCE',
+                          'General': 'MAKERSPACE'}
 
     def _set_conference_r_reservations(self):
         now = QDate.currentDate()
@@ -194,6 +226,78 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.check_last_inv_id.clicked.connect(self.show_last_item_id)
         self.search_file_append_inv.clicked.connect(self.getfile)
 
+        self.choose_item_cat_inv.activated.connect(self.inv_append_item_select)
+        self.pushButton_4.clicked.connect(self.inv_append_use_button)
+        self.pushButton_3.clicked.connect(self.inv_append_open_entries_button)
+        self.lineEdit.textChanged.connect(self.inv_append_ng_changed)
+
+    def inv_append_ng_changed(self):
+        self.inv_append_item_select()
+
+    def inv_append_use_button(self):
+        idtbu = self.label_51.text()
+        self.lineEdit_9.setText(idtbu)
+        self.pushButton_3.setEnabled(True)
+
+    def inv_append_open_entries_button(self):
+        self.pushButton_8.setEnabled(True)
+        item_count = self.verticalLayout_40.count()
+
+        for i in range(item_count):
+            if self.verticalLayout_40.itemAt(i).widget().text() == "Unused":
+                self.verticalLayout_39.itemAt(i).widget().setEnabled(False)
+            else:
+                self.verticalLayout_39.itemAt(i).widget().setEnabled(True)
+
+            if i == 0:
+                pass
+            elif self.verticalLayout_38.itemAt(i).widget().text() == "Unused":
+                self.verticalLayout_41.itemAt(i).widget().setEnabled(False)
+            else:
+                self.verticalLayout_41.itemAt(i).widget().setEnabled(True)
+
+    def inv_append_set_entries(self):
+        layouts = [self.verticalLayout_38, self.verticalLayout_40]
+        ind = 0
+
+        for lay in layouts:
+            for x in range(lay.count()):
+                try:
+                    lay.itemAt(x).widget().setText(Globals.current_inventory_cols[ind])
+                    ind += 1
+                except IndexError:
+                    pass
+
+    def inv_append_item_select(self):
+        if self.choose_item_cat_inv.currentText() == "Non Groupable Item":
+            self.label_12.setEnabled(True)
+            self.label_13.setEnabled(True)
+            self.lineEdit.setEnabled(True)
+            self.see_custom_button_inv.setEnabled(True)
+            self.pushButton_4.setEnabled(False)
+            self.pushButton_3.setEnabled(False)
+            self.pushButton_8.setEnabled(False)
+
+            layouts = [self.verticalLayout_39, self.verticalLayout_41]
+
+            for lay in layouts:
+                for x in range(lay.count()):
+                    lay.itemAt(x).widget().setEnabled(False)
+        else:
+            self.pushButton_4.setEnabled(False)
+            self.pushButton_3.setEnabled(False)
+            self.pushButton_8.setEnabled(False)
+            self.label_12.setDisabled(True)
+            self.label_13.setDisabled(True)
+            self.lineEdit.setEnabled(False)
+            self.see_custom_button_inv.setEnabled(False)
+
+            layouts = [self.verticalLayout_39, self.verticalLayout_41]
+
+            for lay in layouts:
+                for x in range(lay.count()):
+                    lay.itemAt(x).widget().setEnabled(False)
+
     def getfile(self):
         ft = str(self.comboBox_2.currentText())
         file_type = "{} File (*.{})".format(ft, ft.lower())
@@ -203,9 +307,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             h = fname.split("/")
             self.label_55.setText(h[-1])
 
+        check_csv_inventory(fname, self.progressBar, self.checkBox)
+
     def show_last_item_id(self):
+        self.pushButton_4.setEnabled(True)
         item_group = str(self.choose_item_cat_inv.currentText())
-        inventory_key = "%" + Globals.app_data['inventory_item_groups'][item_group] + "%"
+        item_type = self.inventory_append_cs.currentText()
+        if item_type == "Stationary Item":
+            item_type = "ST"
+        else:
+            item_type = "CT"
+
+        inventory_key = "%" + item_type + Globals.app_data['inventory_item_groups'][item_group] + "%"
+
+        if len(self.lineEdit.text()) > 0:
+            inventory_key = "%" + item_type + str(self.lineEdit.text()) + "%"
 
         query = "SELECT part_id FROM public.general_inventory WHERE part_id LIKE %s;"
         part_id = select(query, (inventory_key,))
@@ -216,12 +332,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lpi = lpi.index(max(lpi))
             self.last_inv_id_label.setText(part_id[lpi][0])
         except ValueError:
+            lpi = None
             pass
 
-        if not lpi:
-            next_id = str(self.inventory_append_cs.currentText()) + inventory_key[1:-1] + "0001"
+        if lpi is None:
+            next_id = inventory_key[1:-1] + "0001"
             self.last_inv_id_label.setText("ID Has Not Been Used")
-        elif 0 < lpi < 9:
+        elif type(lpi) == int:
             next_id = part_id[lpi][0][:-1] + str(int(part_id[lpi][0][-1]) + 1)
         else:
             next_id = "N/A"
@@ -287,13 +404,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             as_partid = self.search_checkbox_keyword_as.isChecked()
             sum_res = self.search_checkbox_return_summary.isChecked()
             bfit = self.search_checkbox_best_fit.isChecked()
-
-            Globals.groups = {"Machine Shop": '1.150MSMR0',
-                              '3D Printing': '1.150F3DPR',
-                              'Soldering Room': '1.150SR000',
-                              'Tool Checkout': '1.150BTCR0',
-                              'Computers': '1.150MSPCE',
-                              'General': 'MAKERSPACE'}
 
             if as_partid:
                 asql = ("SELECT part_id, name, location_id, qty, available_to_rent, who_has_it "

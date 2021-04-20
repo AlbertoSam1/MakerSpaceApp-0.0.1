@@ -10,16 +10,17 @@
         "username": "test"
     },
     "inventory_item_groups": {
+        "3D Printing": "3D",
         "Clamp Tool": "CT",
         "Desktop": "DC",
         "Drill Bits": "DB",
         "Hand Tool": "HT",
         "Measuring Tool": "MT",
-        "Non Groupable Item": "NGI",
+        "Non Groupable Item": "NG",
         "Office Supply": "OS",
         "Power Tool": "PT",
         "Soldering": "ST",
-        "Tap and Die": "TAD",
+        "Tap and Die": "TD",
         "Tool Cart": "TC"
     }
 }

@@ -180,7 +180,7 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="machine_shop_tab">
            <attribute name="title">
@@ -205,7 +205,7 @@
                <enum>QTabWidget::Rounded</enum>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="ms_safety_tab">
                <attribute name="title">
@@ -3144,6 +3144,11 @@ p, li { white-space: pre-wrap; }
                             </item>
                             <item>
                              <property name="text">
+                              <string>3D Printing</string>
+                             </property>
+                            </item>
+                            <item>
+                             <property name="text">
                               <string>Hand Tool</string>
                              </property>
                             </item>
@@ -3244,7 +3249,7 @@ p, li { white-space: pre-wrap; }
                              <bool>false</bool>
                             </property>
                             <property name="text">
-                             <string>&quot;ABC&quot;:</string>
+                             <string>&quot;AB&quot;:</string>
                             </property>
                            </widget>
                           </item>
@@ -3261,44 +3266,7 @@ p, li { white-space: pre-wrap; }
                              </font>
                             </property>
                             <property name="maxLength">
-                             <number>3</number>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <spacer name="horizontalSpacer_27">
-                            <property name="orientation">
-                             <enum>Qt::Horizontal</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                             <size>
-                              <width>80</width>
-                              <height>20</height>
-                             </size>
-                            </property>
-                           </spacer>
-                          </item>
-                          <item>
-                           <widget class="QLabel" name="label_14">
-                            <property name="enabled">
-                             <bool>false</bool>
-                            </property>
-                            <property name="text">
-                             <string>Item Number:</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QSpinBox" name="spinBox">
-                            <property name="enabled">
-                             <bool>false</bool>
-                            </property>
-                            <property name="font">
-                             <font>
-                              <pointsize>10</pointsize>
-                              <weight>50</weight>
-                              <bold>false</bold>
-                             </font>
+                             <number>2</number>
                             </property>
                            </widget>
                           </item>
@@ -3333,9 +3301,9 @@ p, li { white-space: pre-wrap; }
                            </spacer>
                           </item>
                           <item>
-                           <widget class="QPushButton" name="pushButton_2">
+                           <widget class="QPushButton" name="see_custom_button_inv">
                             <property name="enabled">
-                             <bool>true</bool>
+                             <bool>false</bool>
                             </property>
                             <property name="font">
                              <font>
@@ -3345,7 +3313,7 @@ p, li { white-space: pre-wrap; }
                              </font>
                             </property>
                             <property name="text">
-                             <string>Verify Availablity</string>
+                             <string>See Current Custom ID's</string>
                             </property>
                            </widget>
                           </item>
@@ -3353,26 +3321,6 @@ p, li { white-space: pre-wrap; }
                         </item>
                         <item>
                          <layout class="QHBoxLayout" name="horizontalLayout_36">
-                          <item>
-                           <widget class="QLabel" name="label_17">
-                            <property name="text">
-                             <string>Item ID is:</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QLabel" name="label_18">
-                            <property name="font">
-                             <font>
-                              <weight>50</weight>
-                              <bold>false</bold>
-                             </font>
-                            </property>
-                            <property name="text">
-                             <string>Available?</string>
-                            </property>
-                           </widget>
-                          </item>
                           <item>
                            <spacer name="horizontalSpacer_30">
                             <property name="orientation">
@@ -3407,6 +3355,9 @@ p, li { white-space: pre-wrap; }
                            <layout class="QVBoxLayout" name="verticalLayout_36">
                             <item>
                              <widget class="QPushButton" name="pushButton_4">
+                              <property name="enabled">
+                               <bool>false</bool>
+                              </property>
                               <property name="font">
                                <font>
                                 <pointsize>10</pointsize>
@@ -3440,6 +3391,9 @@ p, li { white-space: pre-wrap; }
                           </item>
                           <item>
                            <widget class="QPushButton" name="pushButton_3">
+                            <property name="enabled">
+                             <bool>false</bool>
+                            </property>
                             <property name="font">
                              <font>
                               <pointsize>10</pointsize>
@@ -3467,6 +3421,9 @@ p, li { white-space: pre-wrap; }
                           </item>
                           <item>
                            <widget class="QPushButton" name="pushButton_8">
+                            <property name="enabled">
+                             <bool>false</bool>
+                            </property>
                             <property name="font">
                              <font>
                               <pointsize>10</pointsize>
@@ -4675,24 +4632,24 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QTabWidget" name="tabWidget">
               <property name="currentIndex">
-               <number>3</number>
+               <number>2</number>
               </property>
-              <widget class="QWidget" name="tab_2">
+              <widget class="QWidget" name="fr_registration">
                <attribute name="title">
                 <string>Registration</string>
                </attribute>
               </widget>
-              <widget class="QWidget" name="tab_4">
+              <widget class="QWidget" name="fr_qr_login">
                <attribute name="title">
                 <string>QR Code Log-in</string>
                </attribute>
               </widget>
-              <widget class="QWidget" name="tab_5">
+              <widget class="QWidget" name="fr_cage_register">
                <attribute name="title">
                 <string>Cage Reservation</string>
                </attribute>
               </widget>
-              <widget class="QWidget" name="tab_6">
+              <widget class="QWidget" name="fr_conf_register">
                <attribute name="title">
                 <string>Conference Rooms</string>
                </attribute>
@@ -5296,7 +5253,7 @@ p, li { white-space: pre-wrap; }
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_7">
+          <widget class="QWidget" name="Help">
            <attribute name="title">
             <string>Help</string>
            </attribute>

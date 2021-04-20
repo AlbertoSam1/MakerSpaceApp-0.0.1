@@ -1,23 +1,30 @@
-import openpyxl
-from FileManager import open_single_file_manager
+import csv
 
-# Read and check a CSV file
-class CheckCSV:
-    def __init__(self):
-        self.file = open_single_file_manager()
 
-    def later(self):
-        xlsx_file = Path(Path.home(), 'Documents', 'ExcelTest.xlsx')
-        wb_obj = openpyxl.load_workbook(xlsx_file)
-        sheet = wb_obj.active
+def check_csv_inventory(fname, progressbar, *args):
+    with open(fname, mode='r', encoding='utf-8-sig') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        total_rows = sum(1 for row in csv_reader)
 
-        keys = []
+        cols = ["part_id", "name", "description", "location_id", "group_serial", "device_serial",
+                "utsa_asset_id", "training_lvl", "qty", "available_to_rent", "in_maintenance", "who_has_it"]
 
-        for column in sheet.iter_cols(1, sheet.max_column):
-            keys.append(column[0].value)
+    with open(fname, mode='r', encoding='utf-8-sig') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        # Check cols order
+        row_count = 0
+        for row in csv_reader:
+            if row_count == 0:
+                header = ",".join(row).split(",")
+                if cols != header:
+                    raise KeyError
+                else:
+                    pass
+                row_count += 1
+            percent = int((row_count/total_rows)*100)
+            progressbar.setValue(percent)
+            row_count += 1
 
-        values = [list(row) for row
-                  in sheet.iter_rows(min_row=2, max_col=sheet.max_column, max_row=sheet.max_row, values_only=True)]
-
-        file_dict = dict(zip(keys, values))
-        print(file_dict)
+            if percent == 100:
+                args[0].toggle()
+                args[0].setEnabled(False)

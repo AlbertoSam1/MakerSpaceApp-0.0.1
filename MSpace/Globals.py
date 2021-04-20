@@ -7,3 +7,5 @@ global inventory_lastused_namekey
 global inventory_override_query_table
 global approval_inv_vals
 global inventory_update_req_id
+global current_inventory_cols
+
